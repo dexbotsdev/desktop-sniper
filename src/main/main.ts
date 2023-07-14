@@ -30,18 +30,18 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+const dev = process.env.DEV;
 
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
-});
-
-ipcMain.on('restart-server', () => {
-  if (!server.default) {
+if (dev) {
+  ipcMain.on('restart-server', () => {
     server.close();
-  }
-});
+    server.listen(process.env.SERVER_PORT, () => {
+      console.log(
+        `Server restarted and listening on port ${process.env.SERVER_PORT}`
+      );
+    });
+  });
+}
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -107,6 +107,9 @@ const createWindow = async () => {
   });
 
   mainWindow.on('closed', () => {
+    if (dev) {
+      server.close();
+    }
     mainWindow = null;
   });
 
@@ -119,7 +122,11 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
-  server.default.start();
+  if (dev) {
+    server.listen(process.env.SERVER_PORT, () => {
+      console.log(`server started on port ${process.env.SERVER_PORT}`);
+    });
+  }
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   new AppUpdater();

@@ -34,6 +34,7 @@
     "socket.io-client": "^4.7.1",
     "solc": "^0.8.20",
     "typescript": "^4.5.3",
+    "winston": "^3.10.0",
     "ws": "^8.9.0"
   }
 }

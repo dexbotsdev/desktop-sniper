@@ -6,54 +6,45 @@ import http, { Server as HttpServer } from 'http';
 import express from 'express';
 import cors from 'cors';
 
-import { router } from './constants/contracts';
-
-import wss from './app/sockets/sniper';
+import router from './app/routes';
+import handleWebsocketRequests from './app/sockets';
+import { logger, removeLoggerWSSConnection } from './app/sockets/logger';
+import { removeERC20TransactionEventListener } from './app/contracts/erc20';
+import { removeUniswapEventListeners } from './app/contracts/uniswap';
+import { removeUniswapWSSConnection } from './app/sockets/uniswap';
 
 require('dotenv').config();
 
 const app = express();
 const server: HttpServer = http.createServer(app);
-const PORT = 8000;
-let restartServerFlag = true;
+const dev = process.env.DEV;
 
+app.use(express.json());
 app.use(
   cors({
     origin: '*',
   })
 );
+
 app.use('/api', router);
 
 server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
-});
-
-function stopServer() {
-  restartServerFlag = false;
-  server.close(() => {
-    console.log('Server permanently closed');
-  });
-}
-
-const startServer = () => {
-  server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-  });
-};
-
-process.on('SIGINT', () => {
-  stopServer();
-  process.exit();
+  handleWebsocketRequests(request, socket, head);
 });
 
 server.on('close', () => {
-  if (restartServerFlag) {
-    setTimeout(() => {
-      startServer();
-    }, 5000);
-  }
+  logger.log({ level: 'info', message: 'server shutting down gracefully 😴' });
+  removeERC20TransactionEventListener();
+  removeUniswapEventListeners();
+  removeUniswapWSSConnection();
+  removeLoggerWSSConnection();
 });
+
+if (!dev) {
+  server.listen(process.env.SERVER_PORT, () => {
+    logger.log({ level: 'info', message: 'server started' });
+    console.log(`server listening on ${process.env.SERVER_PORT}`);
+  });
+}
 
 export default server;

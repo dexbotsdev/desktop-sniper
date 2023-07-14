@@ -1,30 +1,43 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable no-console */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { TokenData } from '../models';
+import useNewWebSocket from './web-socket';
 
-export const useNewWebSocket = (url: string) => {
-  const [ws, setWs] = useState<WebSocket | null>();
-  useEffect(() => {
-    setWs(new WebSocket(url));
-  }, [setWs, url]);
-  return ws;
-};
-
-export const usePairsWebsocket = () => {
+export default function usePairsWebsocket() {
   const [pairs, setPairs] = useState<TokenData[]>([]);
-  const ws = useNewWebSocket('wss://localhost:8000');
+  const ws = useNewWebSocket('ws://localhost:8000/uniswap');
+
+  const closeConnection = useCallback(() => {
+    if (ws) {
+      ws.close();
+    }
+  }, [ws]);
+
+  const openConnection = useCallback(async () => {
+    await fetch('http://localhost:8000/api/uniswap/live-pairs', {
+      method: 'post',
+    }).catch((err: unknown) => console.log(err));
+  }, []);
+
+  const abortUniswapPairsProcess = useCallback(async () => {
+    await fetch('http://localhost:8000/api/uniswap/live-pairs', {
+      method: 'delete',
+    }).catch((err: unknown) => console.log(err));
+  }, []);
+
   if (ws) {
     ws.onmessage = (event: { data: string }) => {
       const entities = JSON.parse(event.data) as { [k: string]: TokenData };
       const items = Object.keys(entities).map((id) => entities[id]);
       setPairs(items);
     };
+    ws.onerror = (event) => {
+      console.log(event);
+    };
+    ws.onclose = () => {
+      abortUniswapPairsProcess();
+    };
   }
-  const closeConnection = useCallback(() => {
-    if (ws) {
-      ws.close();
-    }
-  }, [ws]);
-  return { pairs, closeConnection };
-};
+  return { pairs, closeConnection, openConnection };
+}

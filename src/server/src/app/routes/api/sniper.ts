@@ -12,6 +12,7 @@ router.post('/', async (req: express.Request, res: express.Response) => {
   try {
     await createSniperInstance(req, res);
   } catch (err) {
+    console.log(err);
     res.sendStatus(500);
   }
 });
@@ -20,8 +21,10 @@ router.post('/', async (req: express.Request, res: express.Response) => {
 router.delete('/', async (req: express.Request, res: express.Response) => {
   try {
     await removeSniperInstance(req, res);
-    res.sendStatus(200);
   } catch (err) {
+    console.log(err);
     res.sendStatus(500);
   }
 });
+
+export default router;

@@ -6,3 +6,11 @@ export interface CreateSnipeInstanceRequest {
   buyAmountInEth: number;
   slippage: number;
 }
+
+
+export interface CreateSniperInstanceDto { 
+  token: TokenData;
+  slippage: number;
+  wallets: string[] | null;
+  buyAmountInEth: number
+}
