@@ -1,12 +1,9 @@
 /* eslint-disable prettier/prettier */
 
-import { TokenData } from './token-data';
+import { SnipeTransactionDto } from './transaction';
 
 export type SniperStatus = 'offline' | 'pending' | 'error';
 export interface SniperForm {
-  token: TokenData | null;
-  buyAmountInEth: number;
-  slippage: number;
-  wallets: string[] | null;
+  transaction: SnipeTransactionDto;
   status: SniperStatus;
 }

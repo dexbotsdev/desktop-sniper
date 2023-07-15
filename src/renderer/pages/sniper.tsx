@@ -39,7 +39,7 @@ export default function SniperPage() {
         </div>
         <div className="rounded bg-stone-100 dark:bg-stone-800 flex-1 shadow-sm shadow-[rgba(0,0,0,0.2)]">
           <LivePairsComponent
-            onClick={(token) => updateForm({ token })}
+            onClick={(_address) => updateForm({ transaction: {...form.transaction, _address } })}
             pairs={pairs}
           />
         </div>

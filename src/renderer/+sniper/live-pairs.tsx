@@ -7,12 +7,12 @@ import { TokenData } from './models';
 
 interface LivePairsProps {
   pairs: TokenData[];
-  onClick: (val: TokenData) => void;
+  onClick: (val: string) => void;
 }
 export const LivePairsComponent: FC<LivePairsProps> = ({ pairs, onClick }) => {
   const click = useCallback(
     (token: TokenData) => {
-      onClick(token);
+      onClick(token.deployed_address);
     },
     [onClick]
   );

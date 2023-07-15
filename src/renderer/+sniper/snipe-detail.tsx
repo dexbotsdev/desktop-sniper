@@ -1,9 +1,11 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable no-fallthrough */
 /* eslint-disable prettier/prettier */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 
 import { ChangeEvent, useCallback, useEffect } from 'react';
 import { SniperForm } from './models';
+import { defaultForm } from './hooks/form';
 
 interface SnipeDetailProps {
   form: SniperForm;
@@ -23,40 +25,44 @@ export default function SnipeDetailComponent({
     (
       value: string,
       key: 'slippage' | 'buyAmount' | 'wallets' | 'contractAddress',
-      _form?: SniperForm
+      _form: SniperForm
     ) => {
       const number = Number(value);
       switch (key) {
         case 'contractAddress':
-          onUpdateForm({
-            token: {
-              token0: value,
-              token1: '',
-              pairAddress: '',
-              deployed_address: value,
-              pair: 'weth',
-              liquidity: '',
-            },
-          });
+          onUpdateForm({transaction: {
+            ...defaultForm.transaction,
+             _address: value
+          }});
           break;
         case 'buyAmount':
-          onUpdateForm({ buyAmountInEth: number });
+          onUpdateForm({transaction: {
+            ...defaultForm.transaction,
+             _buyPercentage: number 
+          }});
           break;
         case 'slippage':
-          onUpdateForm({ slippage: number });
+          onUpdateForm({transaction: {
+            ..._form.transaction,
+             _slippage: number 
+          }});
           break;
         case 'wallets':
-          if (!_form) {
-            return;
-          }
-          if (_form.wallets?.some((wallet) => wallet === value)) {
-            onUpdateForm({
-              wallets: _form.wallets.filter((wallet) => wallet !== value),
-            });
-          } else if (_form.wallets) {
-            onUpdateForm({ wallets: [..._form.wallets, value] });
+          if (_form.transaction._accounts?.some((account) => account === value)) {
+            onUpdateForm({ transaction: {
+              ..._form.transaction,
+              _accounts: _form.transaction._accounts.filter((account) => account !== value),
+            }});
+          } else if (_form.transaction._accounts) {
+            onUpdateForm({transaction: {
+              ..._form.transaction,
+              _accounts: [..._form.transaction._accounts, value],
+            }});
           } else {
-            onUpdateForm({ wallets: [value] });
+            onUpdateForm({transaction: {
+              ..._form.transaction,
+              _accounts: [value],
+            }});
           }
         default:
       }
@@ -67,7 +73,7 @@ export default function SnipeDetailComponent({
     onAbort();
   }, [onAbort]);
   useEffect(() => {
-    updateForm('0x4f498380d7F3caaB1291847C2650eF5d42283645', 'contractAddress');
+    updateForm('0x4f498380d7F3caaB1291847C2650eF5d42283645', 'contractAddress', form);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const submit = useCallback(
@@ -92,24 +98,24 @@ export default function SnipeDetailComponent({
           placeholder="Enter a value or select from live pairs..."
           id="contractAddress"
           className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-          value={form.token?.deployed_address}
+          value={form.transaction._address ?? ""}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            updateForm(event.target.value, 'contractAddress')
+            updateForm(event.target.value, 'contractAddress', form)
           }
         />
       </span>
       <div className="inline-flex flex-row gap-2">
         <span className="flex-col flex-1">
           <label htmlFor="amount" className="text-black dark:text-zinc-300">
-            Buy Amount
+            Buy Percentage
           </label>
           <input
             id="amount"
             className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.buyAmountInEth}
+            value={form.transaction._buyPercentage}
             type="number"
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              updateForm(event.target.value, 'buyAmount')
+              updateForm(event.target.value, 'buyAmount', form)
             }
           />
         </span>
@@ -120,10 +126,10 @@ export default function SnipeDetailComponent({
           <input
             id="slippage"
             className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.slippage}
+            value={form.transaction._slippage}
             type="number"
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              updateForm(event.target.value, 'slippage')
+              updateForm(event.target.value, 'slippage', form)
             }
           />
         </span>
@@ -142,7 +148,7 @@ export default function SnipeDetailComponent({
               onClick={() => updateForm(wallet, 'wallets', form)}
               type="button"
               className={`${
-                form.wallets?.some((x) => x === wallet)
+                form.transaction._accounts?.some((x) => x === wallet)
                   ? 'opacity-100'
                   : 'opacity-50'
               } flex flex-row items-center justify-between bg-stone-900 text-zinc-300 font-mono px-2 py-1 text-md rounded`}
@@ -150,7 +156,7 @@ export default function SnipeDetailComponent({
               <p>{wallet}</p>
               <div
                 className={`${
-                  form.wallets?.some((x) => x === wallet)
+                  form.transaction._accounts?.some((x) => x === wallet)
                     ? 'bg-green-500'
                     : 'bg-white'
                 } h-6 w-6 rounded`}

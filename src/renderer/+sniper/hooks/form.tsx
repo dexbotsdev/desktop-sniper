@@ -5,15 +5,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { SniperForm } from '../models';
 import useSniperStatusSocket from './sniper-status';
 
+export const defaultForm: SniperForm = {
+  transaction: {
+    _address: null,
+    _gasPrice: 0,
+    _buyPercentage: 0,
+    _gasLimit: 0,
+    _accounts: [],
+    _slippage: 0,
+  },
+  status: 'offline',
+}
+
 export default function useSniperForm() {
   const { status } = useSniperStatusSocket();
-  const [form, setForm] = useState<SniperForm>({
-    buyAmountInEth: 0,
-    token: null,
-    slippage: 80,
-    wallets: null,
-    status,
-  });
+  const [form, setForm] = useState<SniperForm>(defaultForm);
 
   const updateForm = useCallback((_form: Partial<SniperForm>) => {
     setForm((prev) => ({ ...prev, ..._form }));
@@ -29,7 +35,7 @@ export default function useSniperForm() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(_form),
+      body: JSON.stringify(_form.transaction),
     }).catch((err) => console.log(err));
   }, []);
 
