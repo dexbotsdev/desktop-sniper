@@ -18,7 +18,7 @@ export default function LayoutComponent({
       <SidebarComponent />
       <div className="inline-flex flex-col flex-1">
         <HeaderComponent mainWallet={mainWallet} />
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 h-full overflow-clip">{children}</div>
       </div>
     </div>
   );

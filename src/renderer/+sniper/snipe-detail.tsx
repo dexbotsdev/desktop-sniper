@@ -1,15 +1,21 @@
+/* eslint-disable react/jsx-no-useless-fragment */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-fallthrough */
 /* eslint-disable prettier/prettier */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 
-import { ChangeEvent, useCallback, useEffect } from 'react';
+import { useCallback, useState } from 'react';
+import { ClientWallet } from 'renderer/+main/models/client-wallet';
+import PopoverComponent from 'renderer/+main/components/popover';
+import InputComponent from 'renderer/+main/components/input';
 import { SniperForm } from './models';
+import MultiSendFormComponent from './multi-send-form';
 
 interface SnipeDetailProps {
   form: SniperForm;
   formState: 'invalid' | 'valid';
-  wallets: string[] | undefined;
+  wallets: ClientWallet[] | undefined;
+  mainAccountBalance: number | null;
   onUpdateForm: (value: Partial<SniperForm>) => void;
   onSubmitForm: (form: SniperForm) => void;
   onAbort: () => void;
@@ -17,11 +23,13 @@ interface SnipeDetailProps {
 export default function SnipeDetailComponent({
   wallets,
   form,
+  mainAccountBalance,
   formState,
   onAbort,
   onUpdateForm,
   onSubmitForm,
 }: SnipeDetailProps) {
+  const [popover, setPopover] = useState<boolean>(false);
   const updateForm = useCallback(
     (
       value: string,
@@ -89,10 +97,6 @@ export default function SnipeDetailComponent({
   const abort = useCallback(() => {
     onAbort();
   }, [onAbort]);
-  useEffect(() => {
-    updateForm('0x4f498380d7F3caaB1291847C2650eF5d42283645', 'contractAddress', form);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const submit = useCallback(
     (_form: SniperForm) => {
       onSubmitForm(_form);
@@ -100,117 +104,94 @@ export default function SnipeDetailComponent({
     [onSubmitForm]
   );
   return (
-    <div className="flex-1 flex flex-col p-2 gap-2">
+    <div className="flex-1 flex flex-col p-2 gap-2 overflow-clip">
       <h2 className="text-black dark:text-zinc-300 text-lg font-semibold font-mono">
         Details
       </h2>
-      <span className="w-full">
-        <label
-          htmlFor="contractAddress"
-          className="font-label text-black dark:text-zinc-300"
-        >
-          Contract Address
-        </label>
-        <input
-          placeholder="Enter a value or select from live pairs..."
-          id="contractAddress"
-          className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-          value={form.transaction._address ?? ""}
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            updateForm(event.target.value, 'contractAddress', form)
-          }
-        />
-      </span>
+      <InputComponent 
+        label='contractAddress'
+        placeholder="Enter a value or select from live pairs..."
+        value={form.transaction._address} 
+        onChange={(event) => updateForm(event, 'contractAddress', form)}/> 
       <div className="inline-flex flex-row gap-2">
-        <span className="flex-col flex-1">
-          <label htmlFor="amount" className="text-black dark:text-zinc-300">
-            Buy Percentage
-          </label>
-          <input
-            id="amount"
-            className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.transaction._buyPercentage ?? ''}
-            placeholder='0'
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              updateForm(event.target.value, 'buyAmount', form)
-            }
-          />
-        </span>
-        <span className="flex-col flex-1">
-          <label htmlFor="slippage" className="text-black dark:text-zinc-300">
-            Slippage
-          </label>
-          <input
-            id="slippage"
-            className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.transaction._slippage ?? ''}
-            placeholder='0'
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              updateForm(event.target.value, 'slippage', form)
-            }
-          />
-        </span>
+        <InputComponent 
+          label='buyPercentage'
+          placeholder="0"
+          value={form.transaction._buyPercentage} 
+          onChange={(event) => updateForm(event, 'buyAmount', form)}/>
+        <InputComponent 
+          label='slippage'
+          placeholder="0"
+          value={form.transaction._slippage} 
+          onChange={(event) => updateForm(event, 'slippage', form)}/> 
       </div>
       <div className="inline-flex flex-row gap-2">
-        <span className="flex-col flex-1">
-          <label htmlFor="gas-price" className="text-black dark:text-zinc-300">
-            Gas Price
-          </label>
-          <input
-            id="gas-price"
-            className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.transaction._gasPrice ?? ''}
-            placeholder='0'
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              updateForm(event.target.value, 'gas-price', form)
-            }
-          />
-        </span>
-        <span className="flex-col flex-1">
-          <label htmlFor="gas-limit" className="text-black dark:text-zinc-300">
-            Gas Limit
-          </label>
-          <input
-            id="gas-limit"
-            className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.transaction._gasLimit ?? ''}
-            placeholder='0'
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              updateForm(event.target.value, 'gas-limit', form)
-            }
-          />
-        </span>
+        <InputComponent 
+          label='gas-price'
+          placeholder="0"
+          value={form.transaction._gasPrice} 
+          onChange={(event) => updateForm(event, 'gas-price', form)}/>
+        <InputComponent 
+          label='gas-limit'
+          placeholder="0"
+          value={form.transaction._gasLimit} 
+          onChange={(event) => updateForm(event, 'gas-limit', form)}/> 
       </div>
-      <div className="inline-flex flex-col h-40 flex-1">
+      <div className="flex-1 overflow-y-clip">
+        <div className="flex flex-row items-center justify-between">
         <label htmlFor="wallets" className="text-black dark:text-zinc-300">
           Wallets
         </label>
-        <span
+        <span className="flex flex-row gap-2 py-1 items-center">
+          <button type="button" className="px-1 rounded bg-stone-900 text-white font-semibold">
+            select all
+          </button>
+          <button onClick={() => setPopover(true)} type="button" className="px-1 rounded bg-stone-900 text-white font-semibold">
+            send
+          </button>
+        </span>
+        </div>
+        <div
           id="wallets"
-          className="w-full inline-flex flex-col gap-1 overflow-y-auto text-black dark:text-zinc-300 dark:bg-stone-900 p-2 rounded h-full"
+          className="w-full inline-flex flex-col gap-1 overflow-y-scroll h-full pb-12 text-black dark:text-zinc-300 dark:bg-stone-900 p-2 rounded"
         >
-          {wallets?.map((wallet) => (
+          {wallets?.map(({address, balance, name}) => {
+            if(address){
+              return (
             <button
-              key={wallet}
-              onClick={() => updateForm(wallet, 'wallets', form)}
+              key={address}
+              onClick={() => updateForm(address, 'wallets', form)}
               type="button"
               className={`${
-                form.transaction._accounts?.some((x) => x === wallet)
+                form.transaction._accounts?.some((x) => x === address)
                   ? 'opacity-100'
                   : 'opacity-50'
               } flex flex-row items-center justify-between bg-stone-900 text-zinc-300 font-mono px-2 py-1 text-md rounded`}
             >
-              <p>{wallet}</p>
+            <p className="text-white">
+                  {address?.substring(0, 10)}...
+                  {address?.substring(38, 50)}
+            </p>
+            <p className="text-white">
+              {balance?.substring(0, 6)}
+            </p>
+            <p className="text-white">
+              {name}
+            </p>
               <div
                 className={`${
-                  form.transaction._accounts?.some((x) => x === wallet)
+                  form.transaction._accounts?.some((x) => x === address)
                     ? 'bg-green-500'
                     : 'bg-white'
                 } h-6 w-6 rounded`}
               />
             </button>
-          ))}
-        </span>
+              )
+            }
+            return <></>
+          }
+          )}
+        </div>
       </div>
       <span className="flex flex-col w-full gap-2">
         {form.status === 'offline' && (
@@ -243,6 +224,11 @@ export default function SnipeDetailComponent({
           </button>
         )}
       </span>
+      <div className="h-[0px]">
+      {popover && <PopoverComponent open={popover} onClose={() => setPopover(false)}>
+              <MultiSendFormComponent mainAccountBalance={mainAccountBalance} wallets={form.transaction._accounts}/>
+        </PopoverComponent>}
+      </div>
     </div>
   );
 }

@@ -21,7 +21,7 @@ export const defaultForm: SniperForm = {
 export default function useSniperForm() {
   const { status } = useSniperStatusSocket();
   const [form, setForm] = useState<SniperForm>(defaultForm);
-  const [formState, setFormState] = useState<'invalid' | 'valid'>();
+  const [formState, setFormState] = useState<'invalid' | 'valid'>('invalid');
 
   const validateFormChanges = useCallback((_form: SniperForm) => {
     if(!_form.transaction._address ||

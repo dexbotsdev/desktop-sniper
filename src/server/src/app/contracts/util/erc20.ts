@@ -28,30 +28,22 @@ export default function erc20Utils() {
       }
     };
     const buyToken = async ({ account, amountIn, amountOut, gasLimit, gasPrice, contractAddress }: BuyTokenProps) => {
-      console.log(
-        amountIn,
-        amountOut,
-        gasLimit,
-        gasPrice,
-        contractAddress
-      )
-      const tx = null;
-      // const tx = await router(account.buyer).swapExactETHForTokensSupportingFeeOnTransferTokens(
-      //     amountOut,
-      //     [WETH_CONTRACT, contractAddress],
-      //     account.receiver,
-      //     Date.now() + 1000 * 60 * 1,
-      //     {
-      //       value: amountIn,
-      //       gasLimit,
-      //       gasPrice,
-      //       nonce: null,
-      //     }
-      //   )
-      //   .catch((err: unknown) => {
-      //     console.log(err);
-      //     return null;
-      //   });
+      const tx = await router(account.buyer).swapExactETHForTokensSupportingFeeOnTransferTokens(
+          amountOut,
+          [WETH_CONTRACT, contractAddress],
+          account.receiver,
+          Date.now() + 1000 * 60 * 1,
+          {
+            value: amountIn,
+            gasLimit,
+            gasPrice,
+            nonce: null,
+          }
+        )
+        .catch((err: unknown) => {
+          console.log(err);
+          return null;
+        });
       return { tx, account };
     };
     const getContractDetails = async (contract: Contract) => {

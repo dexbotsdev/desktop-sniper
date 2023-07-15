@@ -50,18 +50,7 @@
   },
   "browserslist": [],
   "prettier": {
-    "singleQuote": true,
-    "overrides": [
-      {
-        "files": [
-          ".prettierrc",
-          ".eslintrc"
-        ],
-        "options": {
-          "parser": "json"
-        }
-      }
-    ]
+    "singleQuote": true
   },
   "jest": {
     "moduleDirectories": [

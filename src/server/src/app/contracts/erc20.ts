@@ -17,29 +17,30 @@ let snipeInProgress: boolean = false;
 let snipeTransactions: { tx: null; account: BuyTokenDto }[] = [];
 
 export const listenForERC20Transactions = async (props: SnipeTransactionDto) => {
+
     contract = erc20Contract(mainAccount, props._address);
+    const buyOrder = await generateBuyOrderFromSnipeTransaction(props, contract);
     if(contract){
     sendSniperStatusMessage('pending');
     logger.log({ level: 'info', message: `Pending snipe on ${await contract.name()}` });
+
     transactionListener = contract.on('Transfer', async () => {
-      if(snipeInProgress){
-        return;
-      }
-      snipeInProgress = true;
-      if(contract){
+      if(!snipeInProgress){
+        snipeInProgress = true;
         logger.log({ level: 'info', message: `Sending buy orders` });
-        const buyOrder = await generateBuyOrderFromSnipeTransaction(props, contract);
         if(buyOrder){
           const result = await buyTokensRecursive(buyOrder, 0, []);
           if(result){
             const results = await Promise.all(result).catch(err => err);
-            console.log("RESULT", await results);
+            logger.log({ level: 'info', message: `RESULT ${JSON.stringify(await results)}` });
           } else {
-            console.log("RESULT", result);
+            logger.log({ level: 'info', message: `RESULT ${result}` });
           }
         }
+        logger.log({ level: 'info', message: `Unkown error occured` });
       }
     });
+
   }
 };
 
@@ -52,7 +53,6 @@ export const getERC20SniperTransactions = (): {tx: any, account: ClientWallet}[]
 }
 
 export const removeERC20TransactionEventListener = () => {
-  contract?.removeListener('Transfer', transactionListener);
-  contract = null;
+  contract?.off('Transfer', transactionListener);
   sendSniperStatusMessage('offline');
 };

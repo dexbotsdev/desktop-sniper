@@ -6,6 +6,7 @@ import useNewWebSocket from './web-socket';
 
 export default function usePairsWebsocket() {
   const [pairs, setPairs] = useState<TokenData[]>([]);
+
   const ws = useNewWebSocket('ws://localhost:8000/uniswap');
 
   const closeConnection = useCallback(() => {
