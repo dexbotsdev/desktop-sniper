@@ -9,7 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import dotenv from 'dotenv';
@@ -19,7 +19,7 @@ import { resolveHtmlPath } from './util';
 /** must import dotenv before server to ensure the server has access to env */
 dotenv.config();
 // eslint-disable-next-line import/first
-import server from '../server/dist/index';
+// import server from '../server/dist/index';
 
 class AppUpdater {
   constructor() {
@@ -30,18 +30,18 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-const dev = process.env.DEV;
+// const dev = false;
 
-if (dev) {
-  ipcMain.on('restart-server', () => {
-    server.close();
-    server.listen(process.env.SERVER_PORT, () => {
-      console.log(
-        `Server restarted and listening on port ${process.env.SERVER_PORT}`
-      );
-    });
-  });
-}
+// if (dev) {
+//   ipcMain.on('restart-server', () => {
+//     server.close();
+//     server.listen(process.env.SERVER_PORT, () => {
+//       console.log(
+//         `Server restarted and listening on port ${process.env.SERVER_PORT}`
+//       );
+//     });
+//   });
+// }
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -107,9 +107,9 @@ const createWindow = async () => {
   });
 
   mainWindow.on('closed', () => {
-    if (dev) {
-      server.close();
-    }
+    // if (dev) {
+    //   server.close();
+    // }
     mainWindow = null;
   });
 
@@ -122,11 +122,11 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
-  if (dev) {
-    server.listen(process.env.SERVER_PORT, () => {
-      console.log(`server started on port ${process.env.SERVER_PORT}`);
-    });
-  }
+  // if (dev) {
+  //   server.listen(process.env.SERVER_PORT, () => {
+  //     console.log(`server started on port ${process.env.SERVER_PORT}`);
+  //   });
+  // }
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   new AppUpdater();
