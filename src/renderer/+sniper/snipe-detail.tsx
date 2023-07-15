@@ -5,10 +5,10 @@
 
 import { ChangeEvent, useCallback, useEffect } from 'react';
 import { SniperForm } from './models';
-import { defaultForm } from './hooks/form';
 
 interface SnipeDetailProps {
   form: SniperForm;
+  formState: 'invalid' | 'valid';
   wallets: string[] | undefined;
   onUpdateForm: (value: Partial<SniperForm>) => void;
   onSubmitForm: (form: SniperForm) => void;
@@ -17,6 +17,7 @@ interface SnipeDetailProps {
 export default function SnipeDetailComponent({
   wallets,
   form,
+  formState,
   onAbort,
   onUpdateForm,
   onSubmitForm,
@@ -24,24 +25,40 @@ export default function SnipeDetailComponent({
   const updateForm = useCallback(
     (
       value: string,
-      key: 'slippage' | 'buyAmount' | 'wallets' | 'contractAddress',
+      key: 'slippage' | 'buyAmount' | 'wallets' | 'contractAddress' | 'gas-limit' | 'gas-price',
       _form: SniperForm
     ) => {
       const number = Number(value);
       switch (key) {
         case 'contractAddress':
           onUpdateForm({transaction: {
-            ...defaultForm.transaction,
+            ..._form.transaction,
              _address: value
           }});
           break;
-        case 'buyAmount':
+          case 'buyAmount':
+            if(Number.isNaN(number)){ break; }
+            onUpdateForm({transaction: {
+              ..._form.transaction,
+               _buyPercentage: number 
+            }});
+            break;
+        case 'gas-limit':
+          if(Number.isNaN(number)){ break; }
           onUpdateForm({transaction: {
-            ...defaultForm.transaction,
-             _buyPercentage: number 
+            ..._form.transaction,
+             _gasLimit: number 
           }});
           break;
+          case 'gas-price':
+            if(Number.isNaN(number)){ break; }
+            onUpdateForm({transaction: {
+              ..._form.transaction,
+               _gasPrice: number 
+            }});
+            break;
         case 'slippage':
+          if(Number.isNaN(number)){ break; }
           onUpdateForm({transaction: {
             ..._form.transaction,
              _slippage: number 
@@ -112,8 +129,8 @@ export default function SnipeDetailComponent({
           <input
             id="amount"
             className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.transaction._buyPercentage}
-            type="number"
+            value={form.transaction._buyPercentage ?? ''}
+            placeholder='0'
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               updateForm(event.target.value, 'buyAmount', form)
             }
@@ -126,10 +143,40 @@ export default function SnipeDetailComponent({
           <input
             id="slippage"
             className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
-            value={form.transaction._slippage}
-            type="number"
+            value={form.transaction._slippage ?? ''}
+            placeholder='0'
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               updateForm(event.target.value, 'slippage', form)
+            }
+          />
+        </span>
+      </div>
+      <div className="inline-flex flex-row gap-2">
+        <span className="flex-col flex-1">
+          <label htmlFor="gas-price" className="text-black dark:text-zinc-300">
+            Gas Price
+          </label>
+          <input
+            id="gas-price"
+            className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
+            value={form.transaction._gasPrice ?? ''}
+            placeholder='0'
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              updateForm(event.target.value, 'gas-price', form)
+            }
+          />
+        </span>
+        <span className="flex-col flex-1">
+          <label htmlFor="gas-limit" className="text-black dark:text-zinc-300">
+            Gas Limit
+          </label>
+          <input
+            id="gas-limit"
+            className="w-full py-2 px-3 rounded text-black dark:text-zinc-300 dark:bg-stone-900"
+            value={form.transaction._gasLimit ?? ''}
+            placeholder='0'
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              updateForm(event.target.value, 'gas-limit', form)
             }
           />
         </span>
@@ -170,7 +217,8 @@ export default function SnipeDetailComponent({
           <button
             onClick={() => submit(form)}
             type="button"
-            className="py-2 rounded bg-green-600 text-white shadow-sm shadow-[rgba(0,0,0,0.2)]"
+            disabled={formState === 'invalid'}
+            className={`${formState === 'invalid' ? "bg-stone-500" : "bg-green-600"} py-2 rounded text-white shadow-sm shadow-[rgba(0,0,0,0.2)]`}
           >
             <p className="font-semibold">SNIPE</p>
           </button>

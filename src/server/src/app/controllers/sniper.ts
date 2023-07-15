@@ -3,21 +3,29 @@
 import express from 'express';
 import { logger } from '../sockets/logger';
 import {
-  getContractName,
+  getERC20SniperTransactions,
   listenForERC20Transactions,
   removeERC20TransactionEventListener,
 } from '../contracts/erc20';
 import { SnipeTransactionDto } from '../models/erc20';
 
+export const getSniperTransactions = async (req: express.Request, res: express.Response) => {
+  try{
+    const transactions = getERC20SniperTransactions()
+    res.status(200).send(transactions);
+  } catch(err){
+    console.log(err);
+    res.status(500).send(err);
+  }
+}
 
 export const createSniperInstance = async (req: express.Request, res: express.Response) => {
   const data: SnipeTransactionDto = req.body;
   try{
     await listenForERC20Transactions(data);
-    const name = await getContractName();
-    logger.log({ level: 'info', message: `Listening to ${name}!` });
     res.status(200).send(data);
   } catch(err){
+    console.log(err);
     logger.log({ level: 'info', message: JSON.stringify(err) });
   }
 };

@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-plusplus */
 /* eslint-disable no-else-return */
@@ -6,7 +7,9 @@
 
 import { BigNumber, Contract, ethers } from "ethers";
 import { WETH_CONTRACT, router } from "../../../constants/contracts";
-import { CalculateTokenAmountProps, BuyTokenProps, BuyTokenRecursiveProps } from "../../models/erc20";
+import { CalculateTokenAmountProps, BuyTokenProps, BuyTokenRecursiveProps, BuyTokenDto, SnipeTransactionDto } from "../../models/erc20";
+import { mainAccount } from "../../../constants";
+import { constructBuyTokenDtoArray } from "../../controllers/wallet";
 
 export default function erc20Utils() {
     const calculateBuyGas = ({_gasPrice, _gasLimit}:{_gasPrice: BigNumber, _gasLimit: BigNumber}) => {
@@ -52,20 +55,49 @@ export default function erc20Utils() {
       return { tx, account };
     };
     const getContractDetails = async (contract: Contract) => {
-        return {supply: contract.totalSupply(), name: contract.name()};
+        return {supply: await contract.totalSupply(), name: await contract.name()};
     }
     return { calculateBuyGas, calculateTokenAmounts, buyToken, getContractDetails };
   };
 
-  type RecursiveReturnType = Promise<void | "complete">;
-  export async function buyTokensRecursive(props: BuyTokenRecursiveProps, count: number):RecursiveReturnType {
+  type RecursiveReturnType = Promise<void | Promise<{ tx: null; account: BuyTokenDto }>[]>;
+  export async function buyTokensRecursive(props: BuyTokenRecursiveProps, count: number, results: Promise<{ tx: null; account: BuyTokenDto}>[]):RecursiveReturnType {
     count += 1;
     const { buyToken } = erc20Utils();
     const buyer = props.accounts[count];
-    buyToken({...props, account: buyer});
-    if(count >= props.accounts.length){
-        return "complete";
+    for(let i = 0; i <= props.accounts.length; i += 1){
+      const result = buyToken({...props, account: buyer});
+      if(result){
+        results.push(result);
+      }
+    }
+    if(results.length === props.accounts.length || count >= 1){
+      // all buys succeeded, or count limit reached
+        return results;
     } else {
-        return buyTokensRecursive(props, count);
+      // buys have failed
+      return buyTokensRecursive({
+        ...props,
+         accounts: props.accounts
+         .filter(account => account !== props.accounts[count])
+        }, count, results);
     }
   }
+
+  const { calculateBuyGas, calculateTokenAmounts, getContractDetails } = erc20Utils();
+
+  export const generateBuyOrderFromSnipeTransaction = async (props: SnipeTransactionDto, contract: Contract): Promise<BuyTokenRecursiveProps | null> => {
+    const details = await getContractDetails(contract);
+    if(details){
+      const tokenAmount = BigNumber.from(details.supply).div(100).mul(props._buyPercentage);
+      const buyOrder = await calculateTokenAmounts({tokenAmount, account: mainAccount, _contract: contract, slippage: props._slippage});
+      if(buyOrder){
+        const { gasLimit, gasPrice } = calculateBuyGas({ _gasLimit: BigNumber.from(props._gasLimit), _gasPrice: BigNumber.from(props._gasPrice) });
+        const wallets = constructBuyTokenDtoArray(props._accounts);
+        if(wallets){
+          return { accounts: wallets, amountIn: buyOrder.amountIn, amountOut: buyOrder.amountOutMin, gasLimit, gasPrice, contractAddress: props._address }
+        }
+      }
+  }
+  return null;
+}

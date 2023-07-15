@@ -8,23 +8,25 @@ import {
   pair_providers,
   tokenBlacklist,
 } from '../../constants';
-import { uniswapFactory } from '../../constants/contracts';
+import erc20Contract, { uniswapFactory } from '../../constants/contracts';
 import { TokenData } from '../models/token-data';
 import { sendUniswapWSSMessage } from '../sockets/uniswap';
 
 const uniswap_pairs: { [id: string]: TokenData } = {};
-let contract: Contract | null;
+let uniswapContract: Contract | null;
 let filter: any = null;
 let livePairsListener: any = null;
 
 export function listenToUniswapLivePairs() {
-  contract = uniswapFactory(mainAccount)
-  filter = contract.filters.PairCreated();
-  livePairsListener = contract.on(filter, async ( token0: PairProviders, token1: PairProviders, pairAddress: string, bigNumber: BigNumber ) => {
-      const liquidity = ethers.utils.formatEther(bigNumber);
-      const deployed_address = tokenBlacklist.some((addy) => token0 === addy) ? token1 : token0;
+  uniswapContract = uniswapFactory(mainAccount)
+  filter = uniswapContract.filters.PairCreated();
+  livePairsListener = uniswapContract.on(filter, async ( token0: PairProviders, token1: PairProviders, pairAddress: string, bigNumber: BigNumber ) => {
+    const liquidity = ethers.utils.formatEther(bigNumber);
+    const deployed_address = tokenBlacklist.some((addy) => token0 === addy) ? token1 : token0;
+    const contract = erc20Contract(mainAccount,deployed_address);
+    const name = await contract.name();
       const pair_address: PairProviders = tokenBlacklist.some((addy) => token0 === addy) ? token0 : token1;
-      const data = { token0, token1, pairAddress, liquidity, deployed_address, pair: pair_providers[pair_address] };
+      const data = { token0, token1, pairAddress, liquidity, deployed_address, pair: pair_providers[pair_address], name };
       uniswap_pairs[deployed_address] = data;
       sendUniswapWSSMessage(JSON.stringify(uniswap_pairs));
     }
@@ -32,8 +34,8 @@ export function listenToUniswapLivePairs() {
 }
 
 export function removeUniswapEventListeners() {
-  if(contract){
-    contract.removeListener(filter, livePairsListener);
-    contract = null;
+  if(uniswapContract){
+    uniswapContract.removeListener(filter, livePairsListener);
+    uniswapContract = null;
   }
 }

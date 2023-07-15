@@ -6,4 +6,5 @@ export interface TokenData {
   liquidity: string;
   deployed_address: string;
   pair: 'weth' | 'usdc';
+  name: string;
 }

@@ -2,7 +2,7 @@
 /* eslint-disable react/self-closing-comp */
 import { useEffect } from 'react';
 import LayoutComponent from 'renderer/+main/components/layout';
-import useSniperForm from 'renderer/+sniper/hooks/form';
+import useSniperForm from 'renderer/+sniper/hooks/sniper-form';
 import usePairsWebsocket from 'renderer/+sniper/hooks/live-pairs';
 import useLoggerWebSocket from 'renderer/+sniper/hooks/live-server';
 import useGetMainWallet from 'renderer/+sniper/hooks/main-wallet';
@@ -14,7 +14,7 @@ import SnipeDetailComponent from 'renderer/+sniper/snipe-detail';
 export default function SniperPage() {
   const { logs, closeLoggerConnection } = useLoggerWebSocket();
   const { pairs, closeConnection, openConnection } = usePairsWebsocket();
-  const { form, updateForm, submitForm, abort } = useSniperForm();
+  const { form, formState, updateForm, submitForm, abort } = useSniperForm();
   const { wallets } = useGetSniperWallets();
   const { wallet } = useGetMainWallet();
   useEffect(() => {
@@ -34,6 +34,7 @@ export default function SniperPage() {
             onUpdateForm={(value) => updateForm(value)}
             form={form}
             wallets={wallets}
+            formState={formState}
           />
           <LiveServerComponent logs={logs} />
         </div>

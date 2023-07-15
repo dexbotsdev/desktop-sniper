@@ -1,49 +1,55 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable no-console */
 
-import { BigNumber, Contract } from 'ethers';
+import { Contract } from 'ethers';
 import erc20Contract from '../../constants/contracts';
 import { mainAccount } from '../../constants';
 import { sendSniperStatusMessage } from '../sockets/sniper-status';
-import erc20Utils, { buyTokensRecursive } from './util/erc20';
-import { SnipeTransactionDto } from '../models/erc20';
-import { constructBuyTokenDtoArray } from '../controllers/wallet';
+import { buyTokensRecursive, generateBuyOrderFromSnipeTransaction } from './util/erc20';
+import { BuyTokenDto, SnipeTransactionDto } from '../models/erc20';
+import { logger } from '../sockets/logger';
+import { ClientWallet } from '../controllers/wallet';
 
 let contract: Contract | null = null;
 let transactionListener: any;
+let snipeInProgress: boolean = false;
+let snipeTransactions: { tx: null; account: BuyTokenDto }[] = [];
 
-const { calculateBuyGas, calculateTokenAmounts, getContractDetails } = erc20Utils();
-
-export const listenForERC20Transactions = async ({
-  _address,
-  _gasPrice,
-  _gasLimit,
-  _accounts,
-  _buyPercentage,
-  _slippage
-  }: SnipeTransactionDto) => {
-    contract = erc20Contract(mainAccount, _address);
+export const listenForERC20Transactions = async (props: SnipeTransactionDto) => {
+    contract = erc20Contract(mainAccount, props._address);
+    if(contract){
     sendSniperStatusMessage('pending');
+    logger.log({ level: 'info', message: `Pending snipe on ${await contract.name()}` });
     transactionListener = contract.on('Transfer', async () => {
+      if(snipeInProgress){
+        return;
+      }
+      snipeInProgress = true;
       if(contract){
-        const totalSupply = (await getContractDetails(contract)).supply;
-        const tokenAmount = BigNumber.from(totalSupply).div(100).mul(_buyPercentage);
-        const { gasLimit, gasPrice } = calculateBuyGas({ _gasLimit: BigNumber.from(_gasLimit), _gasPrice: BigNumber.from(_gasPrice) });
-        const buyOrder = await calculateTokenAmounts({tokenAmount, account: mainAccount, _contract: contract, slippage: _slippage});
-        const wallets = constructBuyTokenDtoArray(_accounts);
-        if(buyOrder && wallets){
-          buyTokensRecursive({
-            contractAddress: contract.address,
-            accounts: wallets,
-            gasLimit,
-            gasPrice,
-            amountIn: buyOrder.amountIn,
-            amountOut: buyOrder.amountOutMin
-          },0);
+        logger.log({ level: 'info', message: `Sending buy orders` });
+        const buyOrder = await generateBuyOrderFromSnipeTransaction(props, contract);
+        if(buyOrder){
+          const result = await buyTokensRecursive(buyOrder, 0, []);
+          if(result){
+            const results = await Promise.all(result).catch(err => err);
+            console.log("RESULT", await results);
+          } else {
+            console.log("RESULT", result);
+          }
         }
-        }
+      }
     });
+  }
 };
+
+export const getERC20SniperTransactions = (): {tx: any, account: ClientWallet}[] => {
+   const transactions = snipeTransactions.map(value => {
+     return {...value, account: new ClientWallet(value.account.buyer, value.account.receiver)}
+    })
+    snipeTransactions = [];
+  return transactions;
+}
 
 export const removeERC20TransactionEventListener = () => {
   contract?.removeListener('Transfer', transactionListener);

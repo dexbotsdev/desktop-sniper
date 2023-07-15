@@ -36,6 +36,7 @@ export const LivePairsComponent: FC<LivePairsProps> = ({ pairs, onClick }) => {
             className="bg-white dark:bg-stone-900 dark:text-zinc-300 text-black inline-flex flex-row justify-between px-8 py-2 border-b-[1px] border-b-black border-opacity-20 rounded"
           >
             <p className="font-semibold">{data.pair}</p>
+            <p className="font-semibold">{data.name}</p>
             <p className="font-semibold">
               {data.deployed_address.substring(0, 10)}...
               {data.deployed_address.substring(38, 50)}

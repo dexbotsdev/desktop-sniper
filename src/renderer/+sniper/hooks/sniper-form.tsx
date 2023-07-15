@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable prettier/prettier */
 /* eslint-disable no-console */
 
@@ -8,11 +9,11 @@ import useSniperStatusSocket from './sniper-status';
 export const defaultForm: SniperForm = {
   transaction: {
     _address: null,
-    _gasPrice: 0,
-    _buyPercentage: 0,
-    _gasLimit: 0,
-    _accounts: [],
-    _slippage: 0,
+    _gasPrice: null,
+    _buyPercentage: null,
+    _gasLimit: null,
+    _accounts: null,
+    _slippage: null,
   },
   status: 'offline',
 }
@@ -20,6 +21,25 @@ export const defaultForm: SniperForm = {
 export default function useSniperForm() {
   const { status } = useSniperStatusSocket();
   const [form, setForm] = useState<SniperForm>(defaultForm);
+  const [formState, setFormState] = useState<'invalid' | 'valid'>();
+
+  const validateFormChanges = useCallback((_form: SniperForm) => {
+    if(!_form.transaction._address ||
+      !_form.transaction._accounts ||
+      !_form.transaction._buyPercentage ||
+      !_form.transaction._gasLimit || 
+      !_form.transaction._slippage ||
+      _form.transaction._accounts.length === 0
+    ){ 
+    setFormState('invalid');
+    } else {
+      setFormState('valid');
+    };
+  }, [])
+
+  useEffect(() => {
+    validateFormChanges(form);
+  }, [form, validateFormChanges]);
 
   const updateForm = useCallback((_form: Partial<SniperForm>) => {
     setForm((prev) => ({ ...prev, ..._form }));
@@ -45,5 +65,5 @@ export default function useSniperForm() {
     }).catch((err) => console.log(err));
   }, []);
 
-  return { form, updateForm, submitForm, abort };
+  return { form, updateForm, submitForm, abort, formState };
 }
