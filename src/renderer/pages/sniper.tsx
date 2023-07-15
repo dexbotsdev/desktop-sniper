@@ -26,7 +26,7 @@ export default function SniperPage() {
   }, [closeConnection, openConnection, closeLoggerConnection]);
   return (
     <LayoutComponent mainWallet={wallet}>
-      <div className="h-full w-full flex flex-row gap-2 p-2">
+      <div className="h-full w-full flex flex-row gap-2 p-2 overflow-hidden">
         <div className="bg-stone-200 dark:bg-stone-800 rounded inline-flex flex-col flex-1 overflow-clip p-2 gap-2 shadow-sm shadow-[rgba(0,0,0,0.2)]">
           <SnipeDetailComponent
             onAbort={abort}
@@ -34,6 +34,7 @@ export default function SniperPage() {
             onUpdateForm={(value) => updateForm(value)}
             form={form}
             wallets={wallets}
+            mainAccountBalance={Number(wallet?.balance)}
             formState={formState}
           />
           <LiveServerComponent logs={logs} />

@@ -15,7 +15,11 @@ export default function HeaderComponent({ mainWallet }: HeaderProps) {
       </div>
       {mainWallet && <div className="flex-1 h-full flex flex-row justify-evenly items-center">
         <p className="text-white">
-        main: {mainWallet.address}
+              {mainWallet.address?.substring(0, 10)}...
+              {mainWallet.address?.substring(38, 50)}
+        </p>
+        <p className="text-white">
+          balance: {mainWallet.balance?.substring(0, 6)}
         </p>
       </div>}
       <div className="flex-1">

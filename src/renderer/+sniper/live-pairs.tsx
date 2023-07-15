@@ -26,7 +26,7 @@ export const LivePairsComponent: FC<LivePairsProps> = ({ pairs, onClick }) => {
           <p className="text-white">type</p>
         </button>
       </div>
-      <div className="flex flex-col w-full items-stretch flex-1 overflow-y-scroll p-2 gap-1">
+      <div className="flex flex-col-reverse justify-end w-full items-stretch flex-1 overflow-y-auto p-2 gap-1">
         {pairs.map((data, idx) => (
           <button
             type="button"
