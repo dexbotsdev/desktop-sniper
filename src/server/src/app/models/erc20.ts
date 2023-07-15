@@ -16,9 +16,9 @@ export interface BuyTokenDto {
 
 export interface SnipeTransactionDto {
   _address: string;
-  _gasPrice: BigNumber;
+  _gasPrice: number;
   _buyPercentage: number;
-  _gasLimit: BigNumber;
+  _gasLimit: number;
   _accounts: string[];
   _slippage: number;
 }

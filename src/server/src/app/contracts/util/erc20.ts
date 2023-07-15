@@ -25,28 +25,36 @@ export default function erc20Utils() {
       }
     };
     const buyToken = async ({ account, amountIn, amountOut, gasLimit, gasPrice, contractAddress }: BuyTokenProps) => {
-      const tx = await router(account.buyer).swapExactETHForTokensSupportingFeeOnTransferTokens(
-          amountOut,
-          [WETH_CONTRACT, contractAddress],
-          account.receiver,
-          Date.now() + 1000 * 60 * 1,
-          {
-            value: amountIn,
-            gasLimit,
-            gasPrice,
-            nonce: null,
-          }
-        )
-        .catch((err: unknown) => {
-          console.log(err);
-          return null;
-        });
+      console.log(
+        amountIn,
+        amountOut,
+        gasLimit,
+        gasPrice,
+        contractAddress
+      )
+      const tx = null;
+      // const tx = await router(account.buyer).swapExactETHForTokensSupportingFeeOnTransferTokens(
+      //     amountOut,
+      //     [WETH_CONTRACT, contractAddress],
+      //     account.receiver,
+      //     Date.now() + 1000 * 60 * 1,
+      //     {
+      //       value: amountIn,
+      //       gasLimit,
+      //       gasPrice,
+      //       nonce: null,
+      //     }
+      //   )
+      //   .catch((err: unknown) => {
+      //     console.log(err);
+      //     return null;
+      //   });
       return { tx, account };
     };
-    const getTotalSupply = async (contract: Contract) => {
-        return contract.totalSupply();
+    const getContractDetails = async (contract: Contract) => {
+        return {supply: contract.totalSupply(), name: contract.name()};
     }
-    return { calculateBuyGas, calculateTokenAmounts, buyToken, getTotalSupply };
+    return { calculateBuyGas, calculateTokenAmounts, buyToken, getContractDetails };
   };
 
   type RecursiveReturnType = Promise<void | "complete">;

@@ -4,7 +4,6 @@
 import dotenv from 'dotenv';
 
 import {
-  Wallet,
   ethers,
   providers,
   // providers
@@ -32,21 +31,8 @@ export const customWsProvider: providers.WebSocketProvider =
   new ethers.providers.WebSocketProvider(process.env.WSS!, {
     name: 'ethereum',
     chainId: 1,
-  });
+});
 
-/**
- *  create extra accounts here
- *
- *  @example export const accountThree: Ethers.wallet = new ethers.Wallet(process.env.SECRET_THREE!).connect(customWsProvider)
- *
- * */
-
-export const mainAccount = new ethers.Wallet(process.env.SECRET_ONE!).connect(
+export const mainAccount = new ethers.Wallet(process.env.MAIN!).connect(
   customWsProvider
 );
-
-export const accounts: { [k in string]: {buyer: Wallet, receiver: string} } = {
-  one: { buyer: new ethers.Wallet(process.env.SECRET_FOUR!).connect(customWsProvider), receiver: "" },
-  two: { buyer: new ethers.Wallet(process.env.SECRET_THREE!).connect(customWsProvider), receiver: "" },
-  three: { buyer: new ethers.Wallet(process.env.SECRET_TWO!).connect(customWsProvider), receiver: "" }
-};

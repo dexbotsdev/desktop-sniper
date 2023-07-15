@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable camelcase */
 
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Contract, ethers } from 'ethers';
 import {
   PairProviders,
   mainAccount,
@@ -13,11 +13,14 @@ import { TokenData } from '../models/token-data';
 import { sendUniswapWSSMessage } from '../sockets/uniswap';
 
 const uniswap_pairs: { [id: string]: TokenData } = {};
-const contract = uniswapFactory(mainAccount);
+let contract: Contract | null;
+let filter: any = null;
+let livePairsListener: any = null;
 
 export function listenToUniswapLivePairs() {
-  const filter = contract.filters.PairCreated();
-  contract.on(filter, async ( token0: PairProviders, token1: PairProviders, pairAddress: string, bigNumber: BigNumber ) => {
+  contract = uniswapFactory(mainAccount)
+  filter = contract.filters.PairCreated();
+  livePairsListener = contract.on(filter, async ( token0: PairProviders, token1: PairProviders, pairAddress: string, bigNumber: BigNumber ) => {
       const liquidity = ethers.utils.formatEther(bigNumber);
       const deployed_address = tokenBlacklist.some((addy) => token0 === addy) ? token1 : token0;
       const pair_address: PairProviders = tokenBlacklist.some((addy) => token0 === addy) ? token0 : token1;
@@ -29,5 +32,8 @@ export function listenToUniswapLivePairs() {
 }
 
 export function removeUniswapEventListeners() {
-  contract.removeAllListeners();
+  if(contract){
+    contract.removeListener(filter, livePairsListener);
+    contract = null;
+  }
 }

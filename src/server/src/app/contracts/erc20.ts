@@ -3,16 +3,18 @@
 
 import { BigNumber, Contract } from 'ethers';
 import erc20Contract from '../../constants/contracts';
-import { accounts, mainAccount } from '../../constants';
+import { mainAccount } from '../../constants';
 import { sendSniperStatusMessage } from '../sockets/sniper-status';
 import erc20Utils, { buyTokensRecursive } from './util/erc20';
 import { SnipeTransactionDto } from '../models/erc20';
-import { logger } from '../sockets/logger';
+import { constructBuyTokenDtoArray } from '../controllers/wallet';
 
 let contract: Contract | null = null;
 let transactionListener: any;
 
-export const listenForERC20Transactions = async ({ 
+const { calculateBuyGas, calculateTokenAmounts, getContractDetails } = erc20Utils();
+
+export const listenForERC20Transactions = async ({
   _address,
   _gasPrice,
   _gasLimit,
@@ -22,16 +24,14 @@ export const listenForERC20Transactions = async ({
   }: SnipeTransactionDto) => {
     contract = erc20Contract(mainAccount, _address);
     sendSniperStatusMessage('pending');
-    logger.log({ level: 'info', message: `Listening to ${await contract.name().catch(() => "undefined")}!` });
     transactionListener = contract.on('Transfer', async () => {
-      const { calculateBuyGas, calculateTokenAmounts, getTotalSupply } = erc20Utils();
       if(contract){
-        const totalSupply = getTotalSupply(contract);
+        const totalSupply = (await getContractDetails(contract)).supply;
         const tokenAmount = BigNumber.from(totalSupply).div(100).mul(_buyPercentage);
-        const { gasLimit, gasPrice } = calculateBuyGas({ _gasLimit, _gasPrice });
+        const { gasLimit, gasPrice } = calculateBuyGas({ _gasLimit: BigNumber.from(_gasLimit), _gasPrice: BigNumber.from(_gasPrice) });
         const buyOrder = await calculateTokenAmounts({tokenAmount, account: mainAccount, _contract: contract, slippage: _slippage});
-        const wallets = _accounts.map((account) => accounts[account]);
-        if(buyOrder){
+        const wallets = constructBuyTokenDtoArray(_accounts);
+        if(buyOrder && wallets){
           buyTokensRecursive({
             contractAddress: contract.address,
             accounts: wallets,
